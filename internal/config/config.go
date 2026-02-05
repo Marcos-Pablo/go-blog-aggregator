@@ -15,17 +15,7 @@ type Config struct {
 
 func (c *Config) SetUser(username string) error {
 	c.CurrentUserName = username
-	filePath, err := getConfigFilePath()
-	if err != nil {
-		return err
-	}
-
-	data, err := json.Marshal(c)
-	if err != nil {
-		return err
-	}
-
-	err = write(data, filePath)
+	err := write(c)
 	if err != nil {
 		return err
 	}
@@ -42,14 +32,21 @@ func getConfigFilePath() (string, error) {
 	return configFilePath, nil
 }
 
-func write(data []byte, filePath string) error {
+func write(cfg *Config) error {
+	filePath, err := getConfigFilePath()
+
+	if err != nil {
+		return err
+	}
+
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
 	}
 
 	defer file.Close()
-	_, err = file.Write(data)
+	encoder := json.NewEncoder(file)
+	err = encoder.Encode(cfg)
 
 	if err != nil {
 		return err
