@@ -29,3 +29,13 @@ func (c *commands) register(name string, f func(*state, command) error) error {
 	c.registry[name] = f
 	return nil
 }
+
+func getCommands() commands {
+	cmds := commands{
+		registry: make(map[string]func(*state, command) error),
+	}
+
+	cmds.register("login", handlerLogin)
+	cmds.register("register", handlerRegister)
+	return cmds
+}
