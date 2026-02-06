@@ -57,10 +57,14 @@ func handlerRegister(s *state, cmd command) error {
 	}
 
 	fmt.Println("User created succesfully")
-	fmt.Printf("ID: %v", user.ID)
-	fmt.Printf("Name: %s\n", user.Name)
-	fmt.Printf("Created at: %v\n", user.CreatedAt)
-	fmt.Printf("Updated at: %v\n", user.UpdatedAt)
+	printUser(user)
 
 	return nil
+}
+
+func printUser(user database.User) {
+	fmt.Printf("-ID:         %v\n", user.ID)
+	fmt.Printf("-Name:       %s\n", user.Name)
+	fmt.Printf("-Created at: %v\n", user.CreatedAt)
+	fmt.Printf("-Updated at: %v\n", user.UpdatedAt)
 }
