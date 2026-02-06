@@ -37,5 +37,6 @@ func getCommands() commands {
 
 	cmds.register("login", handlerLogin)
 	cmds.register("register", handlerRegister)
+	cmds.register("reset", handlerReset)
 	return cmds
 }
