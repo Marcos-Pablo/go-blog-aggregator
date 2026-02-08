@@ -21,11 +21,6 @@ func handlerAgg(s *state, cmd command) error {
 		return fmt.Errorf("Couldn't fetch feed: %w", err)
 	}
 
-	printFeed(feed)
-	return nil
-}
-
-func printFeed(feed *rss.RSSFeed) {
 	fmt.Println("Feed:")
 	fmt.Printf("- Title: %s\n", feed.Channel.Title)
 	fmt.Printf("- Link: %s\n", feed.Channel.Link)
@@ -38,4 +33,5 @@ func printFeed(feed *rss.RSSFeed) {
 		fmt.Printf("*  PubDate: %s\n", item.PubDate)
 		fmt.Println()
 	}
+	return nil
 }
