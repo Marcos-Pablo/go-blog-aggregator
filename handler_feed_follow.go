@@ -2,55 +2,24 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/Marcos-Pablo/go-blog-aggregator/internal/database"
 	"github.com/google/uuid"
 )
 
-func handlerFollow(s *state, cmd command) error {
+func handlerFollow(s *state, cmd command, user database.User) error {
 	if len(cmd.args) != 1 {
 		return fmt.Errorf("usage: %s <url>", cmd.name)
 	}
 
 	url := cmd.args[0]
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
-	wg := sync.WaitGroup{}
-	wg.Add(2)
-	var user database.User
-	var feed database.Feed
-	var userErr error
-	var feedErr error
+	feed, err := s.queries.GetFeedByUrl(context.Background(), url)
 
-	go func() {
-		res, err := s.queries.GetUser(ctx, s.cfg.CurrentUserName)
-		user = res
-		userErr = err
-		if err != nil {
-			cancel()
-		}
-		wg.Done()
-	}()
-
-	go func() {
-		res, err := s.queries.GetFeedByUrl(ctx, url)
-		feed = res
-		feedErr = err
-		if err != nil {
-			cancel()
-		}
-		wg.Done()
-	}()
-
-	wg.Wait()
-
-	if userErr != nil || feedErr != nil {
-		return fmt.Errorf("couldn't follow feed: %w", errors.Join(userErr, feedErr))
+	if err != nil {
+		return fmt.Errorf("couldn't follow feed: %w", err)
 	}
 
 	params := database.CreateFeedFollowParams{
@@ -61,7 +30,7 @@ func handlerFollow(s *state, cmd command) error {
 		FeedID:    feed.ID,
 	}
 
-	follow, err := s.queries.CreateFeedFollow(ctx, params)
+	follow, err := s.queries.CreateFeedFollow(context.Background(), params)
 
 	if err != nil {
 		return fmt.Errorf("couldn't follow feed: %w", err)
@@ -75,13 +44,7 @@ func handlerFollow(s *state, cmd command) error {
 	return nil
 }
 
-func handlerFollowing(s *state, cmd command) error {
-	user, err := s.queries.GetUser(context.Background(), s.cfg.CurrentUserName)
-
-	if err != nil {
-		return fmt.Errorf("couldn't get the followed feeds for the current user: %w", err)
-	}
-
+func handlerFollowing(s *state, cmd command, user database.User) error {
 	follows, err := s.queries.GetFeedFollowsForUser(context.Background(), user.ID)
 
 	if err != nil {
