@@ -7,7 +7,7 @@ import (
 	"github.com/Marcos-Pablo/go-blog-aggregator/internal/rss"
 )
 
-func handlerAgregate(s *state, cmd command) error {
+func handlerAgg(s *state, cmd command) error {
 	// if len(cmd.args) != 1 {
 	// 	return fmt.Errorf("usage: %s <url>", cmd.name)
 	// }
