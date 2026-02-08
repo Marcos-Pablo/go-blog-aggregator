@@ -43,5 +43,6 @@ func getCommands() commands {
 	cmds.register("addfeed", handlerAddFeed)
 	cmds.register("feeds", handlerFeeds)
 	cmds.register("follow", handlerFollow)
+	cmds.register("following", handlerFollowing)
 	return cmds
 }

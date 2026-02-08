@@ -16,13 +16,21 @@ func handlerAddFeed(s *state, cmd command) error {
 
 	name, url := cmd.args[0], cmd.args[1]
 
-	user, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
+	user, err := s.queries.GetUser(context.Background(), s.cfg.CurrentUserName)
 
 	if err != nil {
-		return err
+		return fmt.Errorf("couldn't create feed: %w", err)
 	}
 
-	params := database.CreateFeedParams{
+	tx, err := s.db.BeginTx(context.Background(), nil)
+
+	if err != nil {
+		return fmt.Errorf("couldn't create feed: %w", err)
+	}
+
+	qtx := database.New(tx)
+
+	feedParams := database.CreateFeedParams{
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
@@ -31,9 +39,32 @@ func handlerAddFeed(s *state, cmd command) error {
 		UserID:    user.ID,
 	}
 
-	feed, err := s.db.CreateFeed(context.Background(), params)
+	feed, err := qtx.CreateFeed(context.Background(), feedParams)
 
 	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("couldn't create feed: %w", err)
+	}
+
+	feedFollowParams := database.CreateFeedFollowParams{
+		ID:        uuid.New(),
+		CreatedAt: time.Now().UTC(),
+		UpdatedAt: time.Now().UTC(),
+		UserID:    user.ID,
+		FeedID:    feed.ID,
+	}
+
+	_, err = qtx.CreateFeedFollow(context.Background(), feedFollowParams)
+
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("couldn't create feed: %w", err)
+	}
+
+	err = tx.Commit()
+
+	if err != nil {
+		tx.Rollback()
 		return fmt.Errorf("couldn't create feed: %w", err)
 	}
 
@@ -46,7 +77,7 @@ func handlerAddFeed(s *state, cmd command) error {
 }
 
 func handlerFeeds(s *state, cmd command) error {
-	feeds, err := s.db.GetFeeds(context.Background())
+	feeds, err := s.queries.GetFeeds(context.Background())
 	if err != nil {
 		return fmt.Errorf("couldn't get feeds: %w", err)
 	}

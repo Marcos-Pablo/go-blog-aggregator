@@ -28,16 +28,22 @@ func handlerFollow(s *state, cmd command) error {
 	var feedErr error
 
 	go func() {
-		res, err := s.db.GetUser(ctx, s.cfg.CurrentUserName)
+		res, err := s.queries.GetUser(ctx, s.cfg.CurrentUserName)
 		user = res
 		userErr = err
+		if err != nil {
+			cancel()
+		}
 		wg.Done()
 	}()
 
 	go func() {
-		res, err := s.db.GetFeedByUrl(ctx, url)
+		res, err := s.queries.GetFeedByUrl(ctx, url)
 		feed = res
 		feedErr = err
+		if err != nil {
+			cancel()
+		}
 		wg.Done()
 	}()
 
@@ -55,7 +61,7 @@ func handlerFollow(s *state, cmd command) error {
 		FeedID:    feed.ID,
 	}
 
-	follow, err := s.db.CreateFeedFollow(context.Background(), params)
+	follow, err := s.queries.CreateFeedFollow(ctx, params)
 
 	if err != nil {
 		return fmt.Errorf("couldn't follow feed: %w", err)
@@ -65,6 +71,33 @@ func handlerFollow(s *state, cmd command) error {
 	fmt.Printf("* ID:        %s\n", follow.ID)
 	fmt.Printf("* feed:      %s\n", feed.Name)
 	fmt.Printf("* user:      %s\n", user.Name)
+
+	return nil
+}
+
+func handlerFollowing(s *state, cmd command) error {
+	user, err := s.queries.GetUser(context.Background(), s.cfg.CurrentUserName)
+
+	if err != nil {
+		return fmt.Errorf("couldn't get the followed feeds for the current user: %w", err)
+	}
+
+	follows, err := s.queries.GetFeedFollowsForUser(context.Background(), user.ID)
+
+	if err != nil {
+		return fmt.Errorf("couldn't get the followed feeds for the current user: %w", err)
+	}
+
+	if len(follows) == 0 {
+		fmt.Println("No feeds found.")
+		return nil
+	}
+
+	fmt.Println("Feeds you're currently following:")
+
+	for _, follow := range follows {
+		fmt.Printf("*      %s\n", follow.FeedName)
+	}
 
 	return nil
 }

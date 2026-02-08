@@ -17,7 +17,7 @@ func handlerLogin(s *state, cmd command) error {
 
 	username := cmd.args[0]
 
-	user, err := s.db.GetUser(context.Background(), username)
+	user, err := s.queries.GetUser(context.Background(), username)
 	if err == sql.ErrNoRows {
 		return fmt.Errorf("User not found")
 	} else if err != nil {
@@ -46,7 +46,7 @@ func handlerRegister(s *state, cmd command) error {
 		Name:      username,
 	}
 
-	user, err := s.db.CreateUser(context.Background(), params)
+	user, err := s.queries.CreateUser(context.Background(), params)
 
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func handlerRegister(s *state, cmd command) error {
 }
 
 func handlerGetUsers(s *state, cmd command) error {
-	users, err := s.db.GetUsers(context.Background())
+	users, err := s.queries.GetUsers(context.Background())
 	if err != nil {
 		return fmt.Errorf("couldn't list users: %w", err)
 	}

@@ -11,8 +11,9 @@ import (
 )
 
 type state struct {
-	cfg *config.Config
-	db  *database.Queries
+	cfg     *config.Config
+	queries *database.Queries
+	db      *sql.DB
 }
 
 func main() {
@@ -31,8 +32,9 @@ func main() {
 	dbQueries := database.New(db)
 
 	programState := &state{
-		cfg: &config,
-		db:  dbQueries,
+		cfg:     &config,
+		queries: dbQueries,
+		db:      db,
 	}
 
 	cmds := getCommands()
