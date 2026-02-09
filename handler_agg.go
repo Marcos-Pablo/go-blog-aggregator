@@ -5,10 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
+	"github.com/Marcos-Pablo/go-blog-aggregator/internal/database"
 	"github.com/Marcos-Pablo/go-blog-aggregator/internal/rss"
+	"github.com/google/uuid"
 )
 
 func handlerAgg(s *state, cmd command) error {
@@ -67,13 +70,49 @@ func scrapeFeeds(s *state) {
 	}
 
 	fmt.Println("RSS feed fetched successfully:")
+	// TODO: batch insert
 	for _, item := range rssFeed.Channel.Item {
 		if item.Title == "" {
 			continue
 		}
-		fmt.Printf("* Title:      %s\n", item.Title)
+
+		pubDate, err := parseDate(item.PubDate, []string{time.RFC3339, time.RFC1123Z})
+
+		if err != nil {
+			log.Println(err)
+			continue
+		}
+
+		params := database.CreatePostParams{
+			ID:          uuid.New(),
+			CreatedAt:   time.Now().UTC(),
+			UpdatedAt:   time.Now().UTC(),
+			Title:       item.Title,
+			Url:         item.Link,
+			Description: item.Description,
+			PublishedAt: pubDate,
+			FeedID:      feed.ID,
+		}
+
+		_, err = s.queries.CreatePost(context.Background(), params)
+
+		if err != nil {
+			log.Printf("couldn't create post: %v", err)
+			continue
+		}
+
+		fmt.Println("Post created successfully")
 	}
-	fmt.Println()
-	log.Printf("Feed %s collected, %v posts found", feed.Name, len(rssFeed.Channel.Item))
-	fmt.Println("=====================================")
+}
+
+func parseDate(strDate string, layouts []string) (time.Time, error) {
+	for _, layout := range layouts {
+		date, err := time.Parse(layout, strDate)
+
+		if err == nil {
+			return date, nil
+		}
+
+	}
+	return time.Time{}, fmt.Errorf("couldn't parse the date with any of the provided layouts: %s", strings.Join(layouts, ","))
 }
