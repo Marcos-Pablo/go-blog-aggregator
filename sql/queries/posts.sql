@@ -23,10 +23,10 @@ RETURNING *;
 
 -- name: GetPostsForUser :many
 SELECT
-    p.*
+    p.*, f.name AS feed_name
 FROM posts AS p
 JOIN feeds AS f ON p.feed_id = f.id
-JOIN feed_follows AS fo ON fo.id = f.id
+JOIN feed_follows AS fo ON fo.feed_id = f.id
 WHERE fo.user_id = $1
 ORDER BY published_at DESC
 LIMIT $2;
